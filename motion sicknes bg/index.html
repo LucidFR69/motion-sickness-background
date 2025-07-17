@@ -1,0 +1,141 @@
+<html>
+  <head>
+    <title>Motion Sickness Dots</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        overflow: hidden;
+        height: 100%;
+      }
+      #dotsCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 9999;
+      }
+      #controls {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 10000;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        color: white;
+        font-family: sans-serif;
+        border-radius: 8px;
+      }
+      #controls input[type="color"],
+      #controls input[type="range"] {
+        margin-bottom: 5px;
+      }
+      #controls label {
+        display: block;
+        margin-bottom: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="dotsCanvas"></canvas>
+
+    <div id="controls">
+      <label
+        >Dot Color <input type="color" id="dotColor" value="#ffffff"
+      /></label>
+      <label
+        >Background Color <input type="color" id="bgColor" value="#000000"
+      /></label>
+      <label
+        >Trail Time
+        <input
+          type="range"
+          id="trailTime"
+          min="0.01"
+          max="0.3"
+          step="0.01"
+          value="0.1"
+      /></label>
+      <label><input type="checkbox" id="floatMode" /> Float Over Apps</label>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("dotsCanvas");
+      const ctx = canvas.getContext("2d");
+      const dotColorPicker = document.getElementById("dotColor");
+      const bgColorPicker = document.getElementById("bgColor");
+      const trailTimeSlider = document.getElementById("trailTime");
+      const floatModeCheckbox = document.getElementById("floatMode");
+
+      let spacing = 40;
+      let radius = 2;
+      let dots = [];
+      let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+      function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        generateDots();
+      }
+
+      function generateDots() {
+        dots = [];
+        for (let y = 0; y < canvas.height + spacing; y += spacing) {
+          for (let x = 0; x < canvas.width + spacing; x += spacing) {
+            dots.push({ x, y });
+          }
+        }
+      }
+
+      window.addEventListener("mousemove", (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      function animate() {
+        const bg = bgColorPicker.value;
+        const trail = trailTimeSlider.value;
+        const gradient = ctx.createLinearGradient(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+
+        ctx.fillStyle = `rgba(${hexToRgb(bg)}, ${trail})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const dx = (mouse.x - canvas.width / 2) * -0.02;
+        const dy = (mouse.y - canvas.height / 2) * -0.02;
+
+        ctx.fillStyle = dotColorPicker.value;
+        for (const dot of dots) {
+          ctx.beginPath();
+          ctx.arc(dot.x + dx, dot.y + dy, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        requestAnimationFrame(animate);
+      }
+
+      function hexToRgb(hex) {
+        const bigint = parseInt(hex.slice(1), 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return `${r},${g},${b}`;
+      }
+
+      floatModeCheckbox.addEventListener("change", () => {
+        if (floatModeCheckbox.checked) {
+          canvas.style.pointerEvents = "none";
+        } else {
+          canvas.style.pointerEvents = "auto";
+        }
+      });
+
+      window.addEventListener("resize", resize);
+      resize();
+      animate();
+    </script>
+  </body>
+</html>
